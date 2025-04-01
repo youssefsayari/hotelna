@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.*;
 
 @Entity
 @Getter
@@ -28,9 +28,11 @@ public class User  {
     Long OTP;
     @Enumerated(EnumType.STRING)
     TypeUser typeUser;
-
-
-
+    /*--------------------------------Start Sayari-----------------------------------*/
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Complaint> complaints = new ArrayList<>();
+    /*--------------------------------End Sayari-----------------------------------*/
 
 
 
