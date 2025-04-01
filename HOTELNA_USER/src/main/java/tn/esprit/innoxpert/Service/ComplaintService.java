@@ -48,7 +48,7 @@ public class ComplaintService implements ComplaintServiceInterface {
 
     public List<Complaint> getAllComplaints() {
         try {
-            return complaintRepository.findAll(Sort.by(Sort.Direction.DESC, "complaintDate"));
+            return complaintRepository.findAll(Sort.by(Sort.Direction.ASC, "complaintDate"));
         } catch (Exception e) {
             System.err.println("Erreur lors de la récupération de toutes les plaintes : " + e.getMessage());
             e.printStackTrace();
