@@ -1,27 +1,23 @@
 package tn.esprit.innoxpert.Controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.innoxpert.Entity.Complaint;
 import tn.esprit.innoxpert.Entity.ComplaintCategories;
+import tn.esprit.innoxpert.Entity.ComplaintSolutionIA;
 import tn.esprit.innoxpert.Entity.ComplaintStatus;
 import tn.esprit.innoxpert.Service.ComplaintService;
+import tn.esprit.innoxpert.Service.ComplaintSolutionIAService;
 import tn.esprit.innoxpert.Util.MistralAIService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Tag(name = "Complaint Management")
@@ -31,6 +27,7 @@ import java.util.stream.Collectors;
 public class ComplaintRestController {
 
     private final ComplaintService complaintService;
+    private final ComplaintSolutionIAService complaintSolutionIAService;
 
     // CREATE
     @PostMapping("/addComplaint")
@@ -182,7 +179,7 @@ public class ComplaintRestController {
                 ));
     }
 
-
+                                /*------------partie ia ----------------*/
         private final MistralAIService mistralAIService;
 
     @PostMapping("/generate-ai-solution")
@@ -199,5 +196,15 @@ public class ComplaintRestController {
         };
 
         return new ResponseEntity<>(response, status);
+    }
+    @GetMapping("getSolutionByComplaint/{complaintId}")
+    public ResponseEntity<Optional<ComplaintSolutionIA>> getSolution(@PathVariable Long complaintId) {
+        return ResponseEntity.ok(complaintSolutionIAService.getSolutionByComplaint(complaintId));
+    }
+
+    @PostMapping("acceptSolutionAndAffectToComplaint/{complaintId}")
+    public ResponseEntity<Void> acceptSolution(@RequestBody ComplaintSolutionIA solutionIA,@PathVariable Long complaintId) {
+        complaintSolutionIAService.applySolution(complaintId,solutionIA);
+        return ResponseEntity.ok().build();
     }
 }

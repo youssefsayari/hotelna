@@ -45,4 +45,8 @@ public class Complaint {
     @Size(max = 2000, message = "Les détails de résolution ne peuvent pas dépasser 2000 caractères")
     @Column(length = 2000)
     String resolutionDetails;
+
+    @OneToOne(mappedBy = "complaint", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ComplaintSolutionIA complaintSolutionIA;
+
 }
