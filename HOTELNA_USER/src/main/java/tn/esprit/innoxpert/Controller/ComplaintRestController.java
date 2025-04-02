@@ -1,5 +1,7 @@
 package tn.esprit.innoxpert.Controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -9,8 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.innoxpert.Entity.Complaint;
+import tn.esprit.innoxpert.Entity.ComplaintCategories;
 import tn.esprit.innoxpert.Entity.ComplaintStatus;
 import tn.esprit.innoxpert.Service.ComplaintService;
+import tn.esprit.innoxpert.Util.MistralAIService;
 
 import java.util.List;
 import java.util.Map;
@@ -155,5 +159,37 @@ public class ComplaintRestController {
                         "error", "Validation failed",
                         "messages", errors
                 ));
+    }
+
+
+    private final MistralAIService mistralAIService;
+
+    // Ajoutez ce nouvel endpoint
+    @Operation(
+            summary = "Générer une solution AI pour une réclamation",
+            description = "Utilise Mistral AI pour générer une solution préliminaire basée sur la catégorie et la description"
+    )
+    @ApiResponse(responseCode = "200", description = "Solution générée avec succès")
+    @ApiResponse(responseCode = "500", description = "Erreur du service AI")
+    @PostMapping("/generate-ai-solution")
+    public ResponseEntity<?> generateAiSolution(
+            @RequestParam ComplaintCategories category,
+            @RequestParam String description) {
+
+        try {
+            String solution = mistralAIService.generateInitialSolution(category, description);
+            return ResponseEntity.ok(Map.of(
+                    "category", category,
+                    "description", description,
+                    "ai_solution", solution
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "AI service error",
+                            "message", e.getMessage(),
+                            "fallback_solution", mistralAIService.getFallbackSolution(category)
+                    ));
+        }
     }
 }
