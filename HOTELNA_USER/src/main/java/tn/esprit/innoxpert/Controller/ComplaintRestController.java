@@ -1,16 +1,20 @@
 package tn.esprit.innoxpert.Controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.innoxpert.Entity.Complaint;
+import tn.esprit.innoxpert.Entity.ComplaintStatus;
 import tn.esprit.innoxpert.Service.ComplaintService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Tag(name = "Complaint Management")
 @RestController
@@ -23,8 +27,14 @@ public class ComplaintRestController {
     // CREATE
     @PostMapping("/addComplaint")
     public ResponseEntity<?> createComplaint(
-            @RequestBody Complaint complaint,
+            @Valid @RequestBody Complaint complaint,
+            BindingResult result,
             @RequestParam Long userId) {
+
+        if (result.hasErrors()) {
+            return buildValidationErrorResponse(result);
+        }
+
         try {
             Complaint createdComplaint = complaintService.createComplaint(complaint, userId);
             return new ResponseEntity<>(createdComplaint, HttpStatus.CREATED);
@@ -65,18 +75,56 @@ public class ComplaintRestController {
                     ));
         }
     }
+    // Ajoutez ce nouvel endpoint
+    @GetMapping("/getComplaintsByStatus/{status}")
+    public ResponseEntity<?> getComplaintsByStatus(@PathVariable ComplaintStatus status) {
+        try {
+            List<Complaint> complaints = complaintService.getComplaintsByStatus(status);
+            return ResponseEntity.ok(complaints);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Failed to retrieve complaints by status",
+                            "details", e.getMessage()
+                    ));
+        }
+    }
 
     // UPDATE
     @PutMapping("/updateComplaint/{id}")
-    public ResponseEntity<?> updateComplaint(@PathVariable Long id, @RequestBody Complaint complaintDetails) {
-        try {
-            Complaint updatedComplaint = complaintService.updateComplaint(id, complaintDetails);
-            return ResponseEntity.ok(updatedComplaint);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<?> updateComplaint(
+            @PathVariable Long id,
+            @Valid @RequestBody Complaint complaint,
+            BindingResult result) {
+
+        if (result.hasErrors()) {
+            // Retournez les erreurs de validation au frontend
+            List<String> errors = result.getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.badRequest()
                     .body(Map.of(
-                            "error", "Failed to update complaint",
-                            "details", e.getMessage()
+                            "error", "Validation failed",
+                            "details", errors
+                    ));
+        }
+
+        try {
+            Complaint updatedComplaint = complaintService.updateComplaint(id, complaint);
+            return ResponseEntity.ok(updatedComplaint);
+        } catch (IllegalArgumentException e) {
+            // Gestion spécifique des erreurs métier
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "error", "Business rule violation",
+                            "message", e.getMessage()
+                    ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of(
+                            "error", "Internal server error",
+                            "message", e.getMessage()
                     ));
         }
     }
@@ -94,5 +142,18 @@ public class ComplaintRestController {
                             "details", e.getMessage()
                     ));
         }
+    }
+    // Méthode utilitaire pour gérer les erreurs de validation
+    private ResponseEntity<Map<String, Object>> buildValidationErrorResponse(BindingResult result) {
+        List<String> errors = result.getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.badRequest()
+                .body(Map.of(
+                        "error", "Validation failed",
+                        "messages", errors
+                ));
     }
 }

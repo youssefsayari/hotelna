@@ -1,16 +1,19 @@
 package tn.esprit.innoxpert.Service;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import tn.esprit.innoxpert.Entity.Complaint;
+import tn.esprit.innoxpert.Entity.ComplaintStatus;
 import tn.esprit.innoxpert.Entity.User;
 import tn.esprit.innoxpert.Exceptions.ComplaintNotFoundException;
 import tn.esprit.innoxpert.Exceptions.UserNotFoundException;
 import tn.esprit.innoxpert.Repository.ComplaintRepository;
 import tn.esprit.innoxpert.Repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -21,16 +24,19 @@ public class ComplaintService implements ComplaintServiceInterface {
     private final UserRepository userRepository;
 
     // CREATE
-    public Complaint createComplaint(Complaint complaint, Long userId) {
+    public Complaint createComplaint(@Valid Complaint complaint, Long userId) {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException(userId));
+
             complaint.setUser(user);
+
+            // Validation métier supplémentaire
+            validateComplaintBusinessRules(complaint);
+
             return complaintRepository.save(complaint);
         } catch (Exception e) {
-            System.err.println("Erreur lors de la création de la plainte : " + e.getMessage());
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("Erreur lors de la création de la plainte: " + e.getMessage(), e);
         }
     }
 
@@ -55,32 +61,48 @@ public class ComplaintService implements ComplaintServiceInterface {
             return List.of();
         }
     }
-
+    // Ajoutez cette méthode dans votre service
+    public List<Complaint> getComplaintsByStatus(ComplaintStatus status) {
+        try {
+            return complaintRepository.findByStatus(status);
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la récupération des plaintes par statut : " + e.getMessage());
+            e.printStackTrace();
+            return List.of();
+        }
+    }
     // UPDATE
     public Complaint updateComplaint(Long id, Complaint complaintDetails) {
-        try {
-            Complaint complaint = getComplaintById(id);
-            if (complaint == null) return null;
+        Complaint complaint = getComplaintById(id);
+        if (complaint == null) {
+            throw new IllegalArgumentException("Complaint not found with id: " + id);
+        }
 
-            // Mise à jour des champs modifiables
-            if (complaintDetails.getDescription() != null) {
-                complaint.setDescription(complaintDetails.getDescription());
+        // Validation métier
+        if (complaintDetails.getStatus() == ComplaintStatus.RESOLU) {
+            if (complaintDetails.getResolutionDetails() == null || complaintDetails.getResolutionDetails().trim().isEmpty()) {
+                throw new IllegalArgumentException("Resolution details are required when status is RESOLU");
             }
-            if (complaintDetails.getCategory() != null) {
-                complaint.setCategory(complaintDetails.getCategory());
-            }
-            if (complaintDetails.getStatus() != null) {
-                complaint.setStatus(complaintDetails.getStatus());
-            }
-            if (complaintDetails.getResolutionDetails() != null) {
-                complaint.setResolutionDetails(complaintDetails.getResolutionDetails());
-            }
+        }
 
-            return complaintRepository.save(complaint);
-        } catch (Exception e) {
-            System.err.println("Erreur lors de la mise à jour de la plainte : " + e.getMessage());
-            e.printStackTrace();
-            return null;
+        // Mise à jour des champs
+        complaint.setDescription(complaintDetails.getDescription());
+        complaint.setCategory(complaintDetails.getCategory());
+        complaint.setStatus(complaintDetails.getStatus());
+        complaint.setResolutionDetails(complaintDetails.getResolutionDetails());
+
+        if (complaintDetails.getStatus() == ComplaintStatus.RESOLU) {
+            complaint.setResolutionDate(LocalDateTime.now());
+        }
+
+        return complaintRepository.save(complaint);
+    }
+
+    // Validation des règles métier
+    private void validateComplaintBusinessRules(Complaint complaint) {
+        if (complaint.getStatus() == ComplaintStatus.RESOLU &&
+                (complaint.getResolutionDetails() == null || complaint.getResolutionDetails().trim().isEmpty())) {
+            throw new IllegalArgumentException("Les détails de résolution sont obligatoires pour un statut RESOLU");
         }
     }
 
