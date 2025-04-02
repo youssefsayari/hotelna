@@ -1,11 +1,15 @@
 package tn.esprit.innoxpert.Util;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import tn.esprit.innoxpert.Entity.ComplaintCategories;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +22,8 @@ public class MistralAIService {
 
     private static final String MODEL = "mistral-small-latest";
     private static final String API_URL = "https://api.mistral.ai/v1/chat/completions";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
 
     private final RestTemplate restTemplate;
 
@@ -25,7 +31,7 @@ public class MistralAIService {
         this.restTemplate = restTemplate;
     }
 
-    public String generateInitialSolution(ComplaintCategories category, String description) {
+    public Map<String, Object> generateInitialSolution(ComplaintCategories category, String description) {
         String prompt = buildPrompt(category, description);
 
         HttpHeaders headers = new HttpHeaders();
@@ -48,25 +54,81 @@ public class MistralAIService {
                     Map.class
             );
 
-            return extractAISolution(response.getBody());
+            String aiResponse = extractAISolution(response.getBody());
+            return formatResponse(category, description, aiResponse);
         } catch (Exception e) {
-            return getFallbackSolution(category);
+            return Map.of(
+                    "status", "error",
+                    "category", category.name(),
+                    "description", description,
+                    "solution", getFallbackSolution(category),
+                    "error", e.getMessage()
+            );
+        }
+    }
+    private Map<String, Object> formatResponse(ComplaintCategories category, String description, String aiResponse) {
+        try {
+            // Nettoyage de la réponse
+            String cleanJson = aiResponse.replace("```json", "")
+                    .replace("```", "")
+                    .trim();
+
+            // Parse le JSON
+            Map<String, Object> parsedResponse = objectMapper.readValue(
+                    cleanJson,
+                    new TypeReference<Map<String, Object>>() {}
+            );
+
+            // Structure de sortie standardisée
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("category", category.name());
+            response.put("description", description);
+            response.putAll(parsedResponse);
+            response.put("timestamp", Instant.now().toString());
+
+            return response;
+        } catch (Exception e) {
+            return Map.of(
+                    "status", "format_error",
+                    "category", category.name(),
+                    "description", description,
+                    "solution", getFallbackSolution(category),
+                    "original_response", aiResponse,
+                    "error", "Failed to parse AI response"
+            );
         }
     }
 
     private String buildPrompt(ComplaintCategories category, String description) {
         return String.format("""
-            En tant que concierge expert d'un hôtel 5 étoiles, proposez une solution immédiate et concise (max 150 mots) 
-            pour une réclamation de type '%s'. La description est : '%s'.
-            
-            Exemple de réponse attendue :
-            - Solution technique rapide
-            - Mesure d'apaisement client
-            - Échéance de résolution
-            
-            Réponse :
-            """, getCategoryLabel(category), description);
+        🎩 **Rôle :** Concierge IA d'un hôtel 5 étoiles  
+        🛎️ **Réclamation signalée :**  
+        - 📌 **Catégorie** : %s  
+        - 📝 **Description** : "%s"  
+        
+        🎯 **Tâches :**  
+        1️⃣ Vérifier si la description est **compréhensible et pertinente** par rapport à la catégorie.  
+           - Si elle est **hors sujet ou incohérente**, demander au client de modifier sa réclamation ou créer une nouvelle .  
+           - Sinon, proposer une solution adaptée.  
+        
+        2️⃣ Si la réclamation est valide, générer une réponse **structurée** contenant :  
+           - ✅ **Une solution immédiate**  
+           - 💡 **Une mesure d'apaisement client**  
+           - ⏳ **Une échéance de résolution**  
+
+        🛠 **Format de réponse attendu :**  
+        ```
+        {
+            "status": "valid" | "invalid",
+            "message": "...",
+            "solution": "...",
+            "apaisement": "...",
+            "delai": "..."
+        }
+        ```
+    """, getCategoryLabel(category), description);
     }
+
 
     private String extractAISolution(Map<String, Object> response) {
         if (response == null || !response.containsKey("choices")) {

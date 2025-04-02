@@ -1,8 +1,12 @@
 package tn.esprit.innoxpert.Controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,19 +138,36 @@ public class ComplaintRestController {
     }
 
     // DELETE
+
     @DeleteMapping("/deleteComplaint/{id}")
-    public ResponseEntity<?> deleteComplaint(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> deleteComplaint(@PathVariable Long id) {
+        if (complaintService.getComplaintById(id)==null) { // Vérification avant suppression
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "Réclamation introuvable",
+                            "id", id,
+                            "details", "Aucune réclamation trouvée avec l'ID " + id
+                    ));
+        }
+
         try {
             complaintService.deleteComplaint(id);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok(Map.of(
+                    "message", "La réclamation a été supprimée avec succès.",
+                    "id", id
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
-                            "error", "Failed to delete complaint",
+                            "error", "Échec de la suppression",
+                            "id", id,
                             "details", e.getMessage()
                     ));
         }
     }
+
+
+
     // Méthode utilitaire pour gérer les erreurs de validation
     private ResponseEntity<Map<String, Object>> buildValidationErrorResponse(BindingResult result) {
         List<String> errors = result.getFieldErrors()
@@ -162,34 +183,21 @@ public class ComplaintRestController {
     }
 
 
-    private final MistralAIService mistralAIService;
+        private final MistralAIService mistralAIService;
 
-    // Ajoutez ce nouvel endpoint
-    @Operation(
-            summary = "Générer une solution AI pour une réclamation",
-            description = "Utilise Mistral AI pour générer une solution préliminaire basée sur la catégorie et la description"
-    )
-    @ApiResponse(responseCode = "200", description = "Solution générée avec succès")
-    @ApiResponse(responseCode = "500", description = "Erreur du service AI")
     @PostMapping("/generate-ai-solution")
-    public ResponseEntity<?> generateAiSolution(
+    public ResponseEntity<Map<String, Object>> generateAiSolution(
             @RequestParam ComplaintCategories category,
             @RequestParam String description) {
 
-        try {
-            String solution = mistralAIService.generateInitialSolution(category, description);
-            return ResponseEntity.ok(Map.of(
-                    "category", category,
-                    "description", description,
-                    "ai_solution", solution
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(
-                            "error", "AI service error",
-                            "message", e.getMessage(),
-                            "fallback_solution", mistralAIService.getFallbackSolution(category)
-                    ));
-        }
+        Map<String, Object> response = mistralAIService.generateInitialSolution(category, description);
+
+        HttpStatus status = switch ((String) response.get("status")) {
+            case "error", "format_error" -> HttpStatus.INTERNAL_SERVER_ERROR;
+            case "invalid" -> HttpStatus.BAD_REQUEST;
+            default -> HttpStatus.OK;
+        };
+
+        return new ResponseEntity<>(response, status);
     }
 }
