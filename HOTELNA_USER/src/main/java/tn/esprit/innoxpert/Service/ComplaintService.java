@@ -12,9 +12,11 @@ import tn.esprit.innoxpert.Exceptions.ComplaintNotFoundException;
 import tn.esprit.innoxpert.Exceptions.UserNotFoundException;
 import tn.esprit.innoxpert.Repository.ComplaintRepository;
 import tn.esprit.innoxpert.Repository.UserRepository;
+import tn.esprit.innoxpert.Util.EmailClass;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -23,6 +25,8 @@ public class ComplaintService implements ComplaintServiceInterface {
     private final ComplaintRepository complaintRepository;
     @Autowired
     private final UserRepository userRepository;
+
+    private final EmailClass emailClass;
 
     // CREATE
     @Override
@@ -35,8 +39,23 @@ public class ComplaintService implements ComplaintServiceInterface {
 
             // Validation métier supplémentaire
             validateComplaintBusinessRules(complaint);
+/*------------------------------------------SEND EMAIL----------------------------------*/
+            Complaint savedComplaint = complaintRepository.save(complaint);
+            // Notification de création
+            emailClass.sendHtmlEmail(
+                    user.getEmail(),
+                    "📬 Votre réclamation a été enregistrée",
+                    String.format(
+                            "<html><body style='padding: 30px; font-family: Arial;'>" +
+                                    "<h2 style='color: #3498db;'>Merci pour votre réclamation !</h2>" +
+                                    "<p>Nous avons bien reçu votre demande (#%d) et la traiterons dans les plus brefs délais.</p>" +
+                                    "<p>Vous pouvez suivre son avancement depuis votre espace personnel.</p>" +
+                                    "</body></html>",
+                            savedComplaint.getId()
+                    )
+            );
 
-            return complaintRepository.save(complaint);
+            return savedComplaint;
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la création de la plainte: " + e.getMessage(), e);
         }
@@ -89,6 +108,8 @@ public class ComplaintService implements ComplaintServiceInterface {
     @Override
     public Complaint updateComplaint(Long id, Complaint complaintDetails) {
         Complaint complaint = getComplaintById(id);
+        ComplaintStatus oldStatus = complaint.getStatus();
+
         if (complaint == null) {
             throw new IllegalArgumentException("Complaint not found with id: " + id);
         }
@@ -110,8 +131,24 @@ public class ComplaintService implements ComplaintServiceInterface {
             complaint.setResolutionDate(LocalDateTime.now());
         }
 
-        return complaintRepository.save(complaint);
+        Complaint updatedComplaint = complaintRepository.save(complaint);
+
+        // Envoyer la notification si le statut a changé
+        if (!Objects.equals(oldStatus, updatedComplaint.getStatus())) {
+            User user = updatedComplaint.getUser();
+
+            emailClass.sendComplaintStatusUpdate(
+                    user.getEmail(),
+                    user.getFirstName(),
+                    updatedComplaint,  // Passer l'objet Complaint complet
+                    oldStatus.name(),
+                    String.valueOf(updatedComplaint.getStatus())   // Passer l'ancien statut
+            );
+        }
+
+        return updatedComplaint;
     }
+
 
     // Validation des règles métier
     private void validateComplaintBusinessRules(Complaint complaint) {
