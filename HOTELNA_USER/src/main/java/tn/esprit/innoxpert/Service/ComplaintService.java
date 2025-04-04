@@ -19,11 +19,13 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class ComplaintService implements ComplaintServiceInterface {
-
+    @Autowired
     private final ComplaintRepository complaintRepository;
+    @Autowired
     private final UserRepository userRepository;
 
     // CREATE
+    @Override
     public Complaint createComplaint(@Valid Complaint complaint, Long userId) {
         try {
             User user = userRepository.findById(userId)
@@ -41,6 +43,7 @@ public class ComplaintService implements ComplaintServiceInterface {
     }
 
     // READ
+    @Override
     public Complaint getComplaintById(Long id) {
         try {
             return complaintRepository.findById(id)
@@ -51,7 +54,7 @@ public class ComplaintService implements ComplaintServiceInterface {
             return null;
         }
     }
-
+    @Override
     public List<Complaint> getAllComplaints() {
         try {
             return complaintRepository.findAll(Sort.by(Sort.Direction.ASC, "complaintDate"));
@@ -62,6 +65,7 @@ public class ComplaintService implements ComplaintServiceInterface {
         }
     }
     // Ajoutez cette méthode dans votre service
+    @Override
     public List<Complaint> getComplaintsByStatus(ComplaintStatus status) {
         try {
             return complaintRepository.findByStatus(status);
@@ -71,7 +75,18 @@ public class ComplaintService implements ComplaintServiceInterface {
             return List.of();
         }
     }
+    @Override
+    public List<Complaint> getComplaintsByUser(Long userId) {
+        try {
+            return complaintRepository.findByUser_IdUser(userId);
+        } catch (Exception e) {
+            System.err.println("Error fetching complaints for user " + userId + ": " + e.getMessage());
+            e.printStackTrace();
+            return List.of();
+        }
+    }
     // UPDATE
+    @Override
     public Complaint updateComplaint(Long id, Complaint complaintDetails) {
         Complaint complaint = getComplaintById(id);
         if (complaint == null) {
@@ -107,6 +122,7 @@ public class ComplaintService implements ComplaintServiceInterface {
     }
 
     // DELETE
+    @Override
     public void deleteComplaint(Long id) {
         try {
             Complaint complaint = getComplaintById(id);

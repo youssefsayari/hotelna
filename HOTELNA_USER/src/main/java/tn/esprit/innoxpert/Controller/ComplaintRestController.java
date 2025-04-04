@@ -3,6 +3,7 @@ package tn.esprit.innoxpert.Controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -25,8 +26,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @RequestMapping("/complaint")
 public class ComplaintRestController {
-
+    @Autowired
     private final ComplaintService complaintService;
+
     private final ComplaintSolutionIAService complaintSolutionIAService;
 
     // CREATE
@@ -80,7 +82,6 @@ public class ComplaintRestController {
                     ));
         }
     }
-    // Ajoutez ce nouvel endpoint
     @GetMapping("/getComplaintsByStatus/{status}")
     public ResponseEntity<?> getComplaintsByStatus(@PathVariable ComplaintStatus status) {
         try {
@@ -90,6 +91,19 @@ public class ComplaintRestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "error", "Failed to retrieve complaints by status",
+                            "details", e.getMessage()
+                    ));
+        }
+    }
+    @GetMapping("/getComplaintsByUser/{userId}")
+    public ResponseEntity<?> getComplaintsByUser(@PathVariable Long userId) {
+        try {
+            List<Complaint> complaints = complaintService.getComplaintsByUser(userId);
+            return ResponseEntity.ok(complaints);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Failed to retrieve user complaints",
                             "details", e.getMessage()
                     ));
         }
