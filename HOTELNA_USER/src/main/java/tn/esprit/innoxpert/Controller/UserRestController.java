@@ -89,5 +89,12 @@ public class UserRestController {
         return userservice.login(email, password);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsers(@RequestParam String name) {
+        List<User> users = userservice.searchUsersByName(name);
+        return ResponseEntity.ok(users);
+    }
+
+
 
 }

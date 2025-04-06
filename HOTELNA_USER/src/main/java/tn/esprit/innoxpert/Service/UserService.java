@@ -147,6 +147,10 @@ public class UserService implements UserServiceInterface {
 
         return user;
     }
+    @Override
+    public List<User> searchUsersByName(String searchTerm) {
+        return userRepository.searchByName(searchTerm);
+    }
 
 
 
