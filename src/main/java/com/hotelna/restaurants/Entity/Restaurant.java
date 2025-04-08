@@ -1,10 +1,9 @@
 package com.hotelna.restaurants.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.sql.Time;
+import java.time.LocalTime;
 
 @Entity
 public class Restaurant {
@@ -13,28 +12,21 @@ public class Restaurant {
     @GeneratedValue
     private int id;
     private String name;
-    private String descritpion;
-    private String statut;
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    private Status statut;
     private String typeRestaurant;
-    private Time openTime;
-    private Time closeTime;
+    private LocalTime openTime;
+    private LocalTime closeTime;
 
     public Restaurant() {
     }
 
-    public Restaurant(String name, String descritpion, String statut, String typeRestaurant, Time openTime, Time closeTime) {
-        this.name = name;
-        this.descritpion = descritpion;
-        this.statut = statut;
-        this.typeRestaurant = typeRestaurant;
-        this.openTime = openTime;
-        this.closeTime = closeTime;
-    }
-
-    public Restaurant(int id, String name, String descritpion, String statut, String typeRestaurant, Time openTime, Time closeTime) {
+    public Restaurant(int id, String name, String description, Status statut, String typeRestaurant, LocalTime openTime, LocalTime closeTime) {
         this.id = id;
         this.name = name;
-        this.descritpion = descritpion;
+        this.description = description;
         this.statut = statut;
         this.typeRestaurant = typeRestaurant;
         this.openTime = openTime;
@@ -57,19 +49,19 @@ public class Restaurant {
         this.name = name;
     }
 
-    public String getDescritpion() {
-        return descritpion;
+    public String getDescription() {
+        return description;
     }
 
-    public void setDescritpion(String descritpion) {
-        this.descritpion = descritpion;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public String getStatut() {
+    public Status getStatut() {
         return statut;
     }
 
-    public void setStatut(String statut) {
+    public void setStatut(Status statut) {
         this.statut = statut;
     }
 
@@ -81,19 +73,19 @@ public class Restaurant {
         this.typeRestaurant = typeRestaurant;
     }
 
-    public Time getOpenTime() {
+    public LocalTime getOpenTime() {
         return openTime;
     }
 
-    public void setOpenTime(Time openTime) {
+    public void setOpenTime(LocalTime openTime) {
         this.openTime = openTime;
     }
 
-    public Time getCloseTime() {
+    public LocalTime getCloseTime() {
         return closeTime;
     }
 
-    public void setCloseTime(Time closeTime) {
+    public void setCloseTime(LocalTime closeTime) {
         this.closeTime = closeTime;
     }
 }
