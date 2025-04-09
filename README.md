@@ -1,4 +1,6 @@
-hotel-complaint-system/
+Structure du gestion :
+ 
+hotelna/
 
 ├── complaint-service/
 
@@ -11,12 +13,6 @@ hotel-complaint-system/
 ├── api-gateway/
 
 ├── eureka-server/
-
-├── frontend-angular/
-
-│   ├── src/
-
-│   └── package.json
 
 ├── .gitignore
 
