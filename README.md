@@ -12,9 +12,9 @@
    
    │   └── README.md
    
-   ├── api-gateway/
+   ├── ApiGateway/
    
-   ├── eureka-server/
+   ├── Eureka/
    
    ├── .gitignore
    
