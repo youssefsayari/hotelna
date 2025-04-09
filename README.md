@@ -1,5 +1,31 @@
 # Système de Gestion de Réclamations Hôtelières
 
+## 📌 Structure
+hotel-complaint-system/
+
+
+├── complaint-service/
+
+│   ├── src/
+
+│   ├── pom.xml
+
+│   └── README.md
+
+├── api-gateway/
+
+├── eureka-server/
+
+├── frontend-angular/
+
+│   ├── src/
+
+│   └── package.json
+
+├── .gitignore
+
+└── README.md
+
 ## 📌 Aperçu
 Application microservices pour la gestion des réclamations dans les hôtels avec :
 - Création de réclamations via chatbot IA
@@ -17,7 +43,8 @@ Application microservices pour la gestion des réclamations dans les hôtels ave
 # Lancer les microservices
 cd eureka-server && mvn spring-boot:run
 cd api-gateway && mvn spring-boot:run
-cd complaint-service && mvn spring-boot:run```
+cd complaint-service && mvn spring-boot:run
+```
 
 
 # 📢 Microservice de Gestion de Réclamations
