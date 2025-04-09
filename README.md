@@ -131,7 +131,7 @@ http://localhost:8080/swagger-ui/index.html
 
 ## 🧑‍💻 Auteur
 
-Développé par [Sayari Youssef] – Projet académique (ou professionnel) dans le cadre de l'apprentissage de Spring Boot et des microservices.
+Développé par [Sayari Youssef] – Projet académique dans le cadre de l'apprentissage de Spring Boot et des microservices.
 
 ---
 
