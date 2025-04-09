@@ -56,3 +56,13 @@ Ce microservice Spring Boot fait partie d'une architecture distribuée comprenan
 ```bash
 git clone https://github.com/youssefsayari/hotelna.git
 cd complaint-service
+2. Configuration Base de Données
+Modifier src/main/resources/application.yml :
+
+yaml
+Copy
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/complaint_db
+    username: root
+    password: root
