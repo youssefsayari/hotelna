@@ -36,7 +36,6 @@ To run this project locally:
 - **JDK 17** or later
 - **MySQL**
 - **Maven**
-- **Node.js** (for frontend development)
 
 ### Steps
 
