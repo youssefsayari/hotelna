@@ -1,9 +1,11 @@
 package com.hotelna.restaurants.Entity;
-
 import jakarta.persistence.*;
-
-import java.sql.Time;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Restaurant {
@@ -11,13 +13,25 @@ public class Restaurant {
     @Id
     @GeneratedValue
     private int id;
+    @NotBlank(message = "Name is required")
+    @Size(min = 4, message = "Name must be at least 4 characters")
     private String name;
+
+    @NotBlank(message = "Description is required")
+    @Size(min = 10, message = "Description must be at least 10 characters")
     private String description;
 
+    @NotNull(message = "Statut is required")
     @Enumerated(EnumType.STRING)
     private Status statut;
+
+    @NotBlank(message = "Type is required")
     private String typeRestaurant;
+
+    @NotNull(message = "Open time is required")
     private LocalTime openTime;
+
+    @NotNull(message = "Close time is required")
     private LocalTime closeTime;
 
     public Restaurant() {

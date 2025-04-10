@@ -30,21 +30,34 @@ public class RestaurantController {
         return ResponseEntity.ok(restaurants);
     }
 
-
     @PutMapping("/update-restaurant")
-    public Restaurant updateRestaurant(@RequestBody Restaurant r)
-    {
-        return restaurantService.updateRestaurant(r);
+    public ResponseEntity<Restaurant> updateRestaurant(@RequestBody Restaurant r) {
+        Restaurant updated = restaurantService.updateRestaurant(r);
+        if (updated == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updated);
     }
+
     @DeleteMapping("/remove-restaurant/{resto-id}")
-    public void deleteRestaurant(@PathVariable("resto-id") int idResto)
-    {
-        restaurantService.deleteRestaurant(idResto);
+    public ResponseEntity<Void> deleteRestaurant(@PathVariable("resto-id") int idResto) {
+        try {
+            restaurantService.deleteRestaurant(idResto);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
-    @GetMapping("/retrieve-retaurant/{resto-id}")
-    public Restaurant getRestaurant(@PathVariable("resto-id")int idResto)
-    {
-        return restaurantService.getRestaurantById(idResto);
+
+    @GetMapping("/retrieve-restaurant/{resto-id}")
+    public ResponseEntity<Restaurant> getRestaurant(@PathVariable("resto-id") int idResto) {
+        try {
+            Restaurant restaurant = restaurantService.getRestaurantById(idResto);
+            return ResponseEntity.ok(restaurant);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
+
 
 }
