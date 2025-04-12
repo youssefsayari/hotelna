@@ -1,9 +1,9 @@
-# app/__init__.py
+#init.py
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 
-# Create SQLAlchemy instance globally
+# Global SQLAlchemy instance
 db = SQLAlchemy()
 
 def create_app():
@@ -13,7 +13,7 @@ def create_app():
 
     db.init_app(app)
 
-    # Register blueprints
+    # Register your routes blueprint
     from .routes import spa_bp
     app.register_blueprint(spa_bp, url_prefix="/spa")
 
