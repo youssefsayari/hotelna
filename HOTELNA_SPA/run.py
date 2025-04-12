@@ -1,4 +1,5 @@
-from app import create_app, db
+#run.py
+from app import create_app
 from flask.cli import with_appcontext
 import click
 import py_eureka_client.eureka_client as eureka_client  # ✅ correct import

@@ -1,22 +1,18 @@
 #init.py
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from flask_pymongo import PyMongo
 from flask_cors import CORS
-from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
+from config import MONGO_URI
 
-# Global SQLAlchemy instance
-db = SQLAlchemy()
+mongo = PyMongo()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
+    app.config["MONGO_URI"] = MONGO_URI
 
     CORS(app)
+    mongo.init_app(app)
 
-    db.init_app(app)
-
-    # Register your routes blueprint
     from .routes import spa_bp
     app.register_blueprint(spa_bp, url_prefix="/spa")
 

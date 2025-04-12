@@ -1,5 +1,5 @@
 # config.py
-SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://root:@localhost/hotelna'
-SQLALCHEMY_TRACK_MODIFICATIONS = False
+MONGO_URI = "mongodb://localhost:27017/hotelna"
 DEBUG = True
+
 

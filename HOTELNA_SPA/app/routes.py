@@ -1,19 +1,26 @@
-# app/routes.py
 from flask import Blueprint, request, jsonify
+from bson.objectid import ObjectId
 from .models import Spa
-from . import db
+from . import mongo
 
 spa_bp = Blueprint('spa_bp', __name__)
+spa_collection = mongo.db.spa  # MongoDB collection
 
 @spa_bp.route('/getAllSpas', methods=['GET'])
 def get_spas():
-    spas = Spa.query.all()
-    return jsonify([spa.to_dict() for spa in spas])
+    spas = spa_collection.find()
+    result = [Spa.from_mongo(spa).to_dict() for spa in spas]
+    return jsonify(result)
 
-@spa_bp.route('/getSpaById/<int:id>', methods=['GET'])
+@spa_bp.route('/getSpaById/<string:id>', methods=['GET'])
 def get_spa(id):
-    spa = Spa.query.get_or_404(id)
-    return jsonify(spa.to_dict())
+    try:
+        spa = spa_collection.find_one({'_id': ObjectId(id)})
+        if not spa:
+            return jsonify({'error': 'Spa not found'}), 404
+        return jsonify(Spa.from_mongo(spa).to_dict())
+    except:
+        return jsonify({'error': 'Invalid ID'}), 400
 
 @spa_bp.route('/addSpa', methods=['POST'])
 def create_spa():
@@ -21,32 +28,39 @@ def create_spa():
     if not data or not data.get('name'):
         return jsonify({'error': 'Missing required fields'}), 400
 
-    new_spa = Spa(
+    spa = Spa(
         name=data['name'],
         description=data.get('description', ''),
         price=data.get('price', 0.0),
         available=data.get('available', True)
     )
-    db.session.add(new_spa)
-    db.session.commit()
-    return jsonify(new_spa.to_dict()), 201
 
-@spa_bp.route('/updateSpa/<int:id>', methods=['PUT'])
+    inserted = spa_collection.insert_one(spa.to_dict())
+    spa.id = str(inserted.inserted_id)
+    return jsonify(spa.to_dict()), 201
+
+@spa_bp.route('/updateSpa/<string:id>', methods=['PUT'])
 def update_spa(id):
-    spa = Spa.query.get_or_404(id)
     data = request.get_json()
+    update_fields = {
+        k: v for k, v in data.items()
+        if k in ['name', 'description', 'price', 'available']
+    }
 
-    spa.name = data.get('name', spa.name)
-    spa.description = data.get('description', spa.description)
-    spa.price = data.get('price', spa.price)
-    spa.available = data.get('available', spa.available)
+    result = spa_collection.update_one(
+        {'_id': ObjectId(id)},
+        {'$set': update_fields}
+    )
 
-    db.session.commit()
-    return jsonify(spa.to_dict())
+    if result.matched_count == 0:
+        return jsonify({'error': 'Spa not found'}), 404
 
-@spa_bp.route('/deleteSpa/<int:id>', methods=['DELETE'])
+    updated_spa = spa_collection.find_one({'_id': ObjectId(id)})
+    return jsonify(Spa.from_mongo(updated_spa).to_dict())
+
+@spa_bp.route('/deleteSpa/<string:id>', methods=['DELETE'])
 def delete_spa(id):
-    spa = Spa.query.get_or_404(id)
-    db.session.delete(spa)
-    db.session.commit()
+    result = spa_collection.delete_one({'_id': ObjectId(id)})
+    if result.deleted_count == 0:
+        return jsonify({'error': 'Spa not found'}), 404
     return jsonify({'message': 'Spa deleted'})
