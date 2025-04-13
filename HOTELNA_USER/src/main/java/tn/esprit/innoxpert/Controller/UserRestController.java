@@ -99,7 +99,6 @@ public class UserRestController {
         return ResponseEntity.ok(users);
     }
 
-    // ✅ Spa endpoints
 
     @GetMapping("/getAllSpas")
     public List<Spa> getAllSpas() {
