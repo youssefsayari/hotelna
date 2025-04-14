@@ -5,14 +5,14 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import tn.esprit.innoxpert.Dto.UserResponseDTO;
 import tn.esprit.innoxpert.Entity.Complaint;
 import tn.esprit.innoxpert.Entity.ComplaintStatus;
-import tn.esprit.innoxpert.Entity.User;
 import tn.esprit.innoxpert.Exceptions.ComplaintNotFoundException;
 import tn.esprit.innoxpert.Exceptions.UserNotFoundException;
 import tn.esprit.innoxpert.Repository.ComplaintRepository;
-import tn.esprit.innoxpert.Repository.UserRepository;
 import tn.esprit.innoxpert.Util.EmailClass;
+import tn.esprit.innoxpert.Util.UserServiceClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,7 +24,7 @@ public class ComplaintService implements ComplaintServiceInterface {
     @Autowired
     private final ComplaintRepository complaintRepository;
     @Autowired
-    private final UserRepository userRepository;
+    private final UserServiceClient userServiceClient;
 
     private final EmailClass emailClass;
 
@@ -32,10 +32,13 @@ public class ComplaintService implements ComplaintServiceInterface {
     @Override
     public Complaint createComplaint(@Valid Complaint complaint, Long userId) {
         try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new UserNotFoundException(userId));
+            UserResponseDTO user = userServiceClient.getUserById(userId);
 
-            complaint.setUser(user);
+            if (user == null) {
+                throw new UserNotFoundException(userId);
+            }
+
+            complaint.setUserId(user.getIdUser());
 
             // Validation métier supplémentaire
             validateComplaintBusinessRules(complaint);
@@ -97,7 +100,7 @@ public class ComplaintService implements ComplaintServiceInterface {
     @Override
     public List<Complaint> getComplaintsByUser(Long userId) {
         try {
-            return complaintRepository.findByUser_IdUser(userId);
+            return complaintRepository. findByUserId(userId);
         } catch (Exception e) {
             System.err.println("Error fetching complaints for user " + userId + ": " + e.getMessage());
             e.printStackTrace();
@@ -135,7 +138,8 @@ public class ComplaintService implements ComplaintServiceInterface {
 
         // Envoyer la notification si le statut a changé
         if (!Objects.equals(oldStatus, updatedComplaint.getStatus())) {
-            User user = updatedComplaint.getUser();
+            UserResponseDTO user = userServiceClient.getUserById(updatedComplaint.getUserId());
+
 
             emailClass.sendComplaintStatusUpdate(
                     user.getEmail(),

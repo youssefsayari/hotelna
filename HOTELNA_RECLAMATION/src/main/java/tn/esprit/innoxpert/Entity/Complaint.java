@@ -19,10 +19,7 @@ public class Complaint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"complaints", "hibernateLazyInitializer", "handler"})
-    private User user;
+    Long userId;
 
     @NotNull(message = "La date de réclamation ne peut pas être nulle")
     LocalDateTime complaintDate = LocalDateTime.now();

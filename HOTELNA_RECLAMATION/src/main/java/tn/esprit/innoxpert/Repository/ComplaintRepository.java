@@ -8,7 +8,6 @@ import java.util.List;
 
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByStatus(ComplaintStatus status);
-    List<Complaint> findByUser_Email(String email); // Recherche par email du User
-    List<Complaint> findByUser_IdUser(Long userId);
+    List<Complaint> findByUserId(Long userId); // Utiliser le champ userId direct
 
 }

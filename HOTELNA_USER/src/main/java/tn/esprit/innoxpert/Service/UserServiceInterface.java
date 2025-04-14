@@ -15,6 +15,7 @@ public interface UserServiceInterface {
     public String generateOtp(String email);
     public boolean changePassword(String email, String newPassword) ;
     public User login(String email, String password) ;
+    public List<User> searchUsersByName(String searchTerm) ;
 
 
 
@@ -23,4 +24,4 @@ public interface UserServiceInterface {
 
 
 
-    }
+}
