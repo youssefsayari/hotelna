@@ -5,6 +5,8 @@ import com.hotelna.restaurants.Entity.Table_Res;
 import com.hotelna.restaurants.Repository.Table_ResRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.hotelna.restaurants.DTO.UserResponseDTO;
+import com.hotelna.restaurants.Util.UserServiceClient;
 
 import java.util.List;
 
@@ -12,6 +14,12 @@ import java.util.List;
 public class Table_ResService implements ITable_ResService {
     @Autowired
     private Table_ResRepository repository;
+    @Autowired
+    private final UserServiceClient userServiceClient;
+
+    public Table_ResService(UserServiceClient userServiceClient) {
+        this.userServiceClient = userServiceClient;
+    }
 
     @Override
     public Table_Res createTableRes(Table_Res tableRes) {
@@ -78,6 +86,8 @@ public class Table_ResService implements ITable_ResService {
     @Override
     public Table_Res reserveTable(int id, int userId) {
         try {
+            UserResponseDTO user = userServiceClient.getUserById((long) userId);
+
             Table_Res tableRes = repository.findById(id).orElseThrow(() ->
                     new RuntimeException("Table_Res not found with ID: " + id));
             if (tableRes.getRestaurant().getStatut() == Status.CLOSED) {
@@ -87,7 +97,7 @@ public class Table_ResService implements ITable_ResService {
                 throw new RuntimeException("Table is already reserved");
             }
             tableRes.setDisponibilite(false);
-            tableRes.setUserId(userId);
+            tableRes.setUserId(user.getIdUser());
             return repository.save(tableRes);
         } catch (Exception e) {
             throw new RuntimeException("Failed to reserve table", e);

@@ -1,17 +1,18 @@
-package com.hotelna.restaurants;
+package tn.esprit.innoxpert;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@EnableDiscoveryClient
 @SpringBootApplication
+@EnableDiscoveryClient
 @EnableFeignClients
-public class RestaurantsApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(RestaurantsApplication.class, args);
-    }
+public class Innoxpert {
+
+	public static void main(String[] args) {
+		SpringApplication.run(Innoxpert.class, args);
+	}
 
 }
