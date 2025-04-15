@@ -9,10 +9,11 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableDiscoveryClient
 @EnableFeignClients
 
-public class Innoxpert {
+
+public class Chambre {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Innoxpert.class, args);
+		SpringApplication.run(Chambre.class, args);
 	}
 
 }

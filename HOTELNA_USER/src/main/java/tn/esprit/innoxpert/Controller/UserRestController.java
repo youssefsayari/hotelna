@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.innoxpert.Dto.UserResponseDTO;
 import tn.esprit.innoxpert.Entity.User;
+import tn.esprit.innoxpert.Repository.UserRepository;
 import tn.esprit.innoxpert.Service.UserServiceInterface;
 import java.util.HashMap;
 import java.util.List;
@@ -17,34 +19,47 @@ import java.util.Map;
 @AllArgsConstructor
 @RequestMapping("/user")
 public class UserRestController {
+
     @Autowired
     UserServiceInterface userservice;
 
+    @Autowired
+    UserRepository userRepository;
+
     @GetMapping("/getUserById/{idUser}")
-    public User getUserById(@PathVariable("idUser") Long idUser)
-    {
-        return userservice.getUserById(idUser);
+    public UserResponseDTO getUserById(@PathVariable("idUser") Long idUser) {
+        User user = userRepository.findById(idUser).orElseThrow();
+        return mapToDTO(user);
     }
+
+    private UserResponseDTO mapToDTO(User user) {
+        UserResponseDTO dto = new UserResponseDTO();
+        dto.setIdUser(user.getIdUser());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setEmail(user.getEmail());
+        return dto;
+    }
+
     @GetMapping("/getAllUsers")
-    public List<User> getAllUsers(){return userservice.getAllUsers();}
+    public List<User> getAllUsers() {
+        return userservice.getAllUsers();
+    }
+
     @PostMapping("/addUser")
-    public User addUser ( @RequestBody User User)
-    {
+    public User addUser(@RequestBody User User) {
         return userservice.addUser(User);
     }
 
     @DeleteMapping("/deleteUser/{idUser}")
-    public void deleteUserById(@PathVariable ("idUser") Long idUser)
-    {
+    public void deleteUserById(@PathVariable("idUser") Long idUser) {
         userservice.removeUserById(idUser);
     }
 
     @PutMapping("/updateUser")
-    public User updateUser(@RequestBody User User)
-    {
+    public User updateUser(@RequestBody User User) {
         return userservice.updateUser(User);
     }
-
 
     @PostMapping("/send-otp")
     public ResponseEntity<Map<String, String>> sendOtp(@RequestBody String email) {
@@ -63,10 +78,9 @@ public class UserRestController {
         return ResponseEntity.ok(Map.of("message", responseMessage));
     }
 
-
     @PostMapping("/verify-otp")
-    public ResponseEntity<Boolean> verifyOtp(@RequestParam String email,@RequestParam Long otp) {
-        boolean response = userservice.validateOtp(email,otp);
+    public ResponseEntity<Boolean> verifyOtp(@RequestParam String email, @RequestParam Long otp) {
+        boolean response = userservice.validateOtp(email, otp);
         return ResponseEntity.ok(response);
     }
 
@@ -94,7 +108,5 @@ public class UserRestController {
         List<User> users = userservice.searchUsersByName(name);
         return ResponseEntity.ok(users);
     }
-
-
 
 }
