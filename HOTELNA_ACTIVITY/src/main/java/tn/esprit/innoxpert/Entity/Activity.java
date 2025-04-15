@@ -33,9 +33,8 @@ public class Activity {
     @Enumerated(EnumType.STRING)
     TypeActivity typeActivity;
 
-    @JsonIgnore
-    @ManyToMany(mappedBy = "activities")
-    Set<User> users = new HashSet<>();
+    @ElementCollection
+    Set<Long> userIds = new HashSet<>();
 
     public boolean isExpired() {
         LocalDate expirationDate = startDate.plusDays(1);

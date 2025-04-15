@@ -2,13 +2,12 @@ package tn.esprit.innoxpert.Service;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.esprit.innoxpert.DTO.ParticipationRequest;
 import tn.esprit.innoxpert.Entity.Activity;
 import tn.esprit.innoxpert.Entity.TypeActivity;
 import tn.esprit.innoxpert.Entity.TypeUser;
 import tn.esprit.innoxpert.Entity.User;
 import tn.esprit.innoxpert.Repository.ActivityRepository;
-import tn.esprit.innoxpert.Repository.UserRepository;
+import tn.esprit.innoxpert.Util.UserClient;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -20,96 +19,82 @@ import java.util.stream.Collectors;
 public class ActivityService implements ActivityServiceInterface {
 
     private final ActivityRepository activityRepository;
-    private final UserRepository userRepository;
+    private final UserClient userClient;  // Injecting UserClient
 
+    // 1. Get all activities
     @Override
     public List<Activity> getAllActivities() {
         return activityRepository.findAll();
     }
 
+    // 2. Get activity by ID
     @Override
     public Activity getActivityById(Long activityId) {
         return activityRepository.findById(activityId).orElse(null);
     }
 
+    // 3. Add a new activity
     @Override
     public Activity addActivity(Activity activity) {
         return activityRepository.save(activity);
     }
 
+    // 4. Remove activity by ID
     @Override
     public void removeActivityById(Long activityId) {
         activityRepository.deleteById(activityId);
     }
 
+    // 5. Update an existing activity
     @Override
     public Activity updateActivity(Activity activity) {
         return activityRepository.save(activity);
     }
 
-    public String participateInActivity(Long userId, Long activityId, String firstName, String lastName, String email, Long telephone) {
-        // Get the activity by its ID
+    // 6. Participate in an activity (with UserClient usage)
+    public String participateInActivity(Long activityId, Long userId) {
+        // Get the activity
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isEmpty()) {
-            return "Activité non trouvée.";
+            return "Activity not found.";
         }
 
         Activity activity = activityOpt.get();
 
-        // Check if the activity has expired
+        // Check if the activity is expired
         if (activity.isExpired()) {
-            return "L'activité est expirée.";
+            return "The activity is expired.";
         }
 
-        // Check if the activity has space left (capacity > 0)
-        if (activity.getCapacity() <= 0) {
-            return "Capacité maximale atteinte.";
+        // Fetch the user using UserClient (calls the user service)
+        User user = userClient.getUserById(userId);  // Feign call to get the user
+
+        if (user == null) {
+            return "User not found.";
+        }
+        // Check if user type is "Visiteur"
+        if (!user.getTypeUser().equals(TypeUser.Visiteur)) {
+            return "Only 'Visiteur' type users can participate.";
         }
 
-        // Get the user by userId
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty()) {
-            return "Utilisateur non trouvé. Seuls les utilisateurs existants peuvent participer.";
+        // Check if the user is already participating in the activity
+        if (activity.getUserIds().contains(user.getIdUser())) {
+            return "You have already participated in this activity.";
         }
 
-        User user = userOpt.get();
-
-        // Check if the provided first name, last name, and telephone match the user details
-        if (!user.getFirstName().equals(firstName) ||
-                !user.getLastName().equals(lastName) ||
-                !user.getTelephone().equals(telephone)) {
-            return "Les informations fournies ne correspondent pas à un utilisateur existant.";
-        }
-
-        // Ensure the user is of type 'Visiteur'
-        if (user.getTypeUser() != TypeUser.Visiteur) {
-            return "Seuls les utilisateurs de type 'Visiteur' peuvent participer.";
-        }
-
-        // Check if the user has already participated in this activity
-        if (activity.getUsers().contains(user)) {
-            return "Vous avez déjà participé à cette activité.";
-        }
-
-        // Add the user to the activity and the activity to the user's activities
-        activity.getUsers().add(user);
-        user.getActivities().add(activity);
-
-        // Decrease the capacity of the activity
+        // Add the user to the activity and update the capacity
+        activity.getUserIds().add(user.getIdUser());
         activity.setCapacity(activity.getCapacity() - 1);
 
-        // Save both the updated activity and user to the database
+        // Save the updated activity
         activityRepository.save(activity);
-        userRepository.save(user);
-
-
-
-        return "Participation réussie !";
+        return "Participation successful!";
     }
+
+    // 7. Get activity statistics
     public Map<String, Object> getActivityStatistics() {
         Map<String, Object> stats = new HashMap<>();
 
-        // Get all activities
         List<Activity> allActivities = activityRepository.findAll();
 
         // 1. Count of activities by type
@@ -117,13 +102,13 @@ public class ActivityService implements ActivityServiceInterface {
                 .collect(Collectors.groupingBy(Activity::getTypeActivity, Collectors.counting()));
         stats.put("activitiesByType", activitiesByType);
 
-        // 2. Most popular activity types (by participation count)
+        // 2. Participation by type
         Map<TypeActivity, Long> participationByType = new HashMap<>();
         for (TypeActivity type : TypeActivity.values()) {
             long count = allActivities.stream()
                     .filter(activity -> activity.getTypeActivity() == type)
-                    .flatMap(activity -> activity.getUsers().stream())
-                    .count();
+                    .mapToLong(activity -> activity.getUserIds().size())
+                    .sum();
             participationByType.put(type, count);
         }
         stats.put("participationByType", participationByType);
@@ -141,49 +126,47 @@ public class ActivityService implements ActivityServiceInterface {
                     activityMap.put("id", activity.getId());
                     activityMap.put("name", activity.getName());
                     activityMap.put("type", activity.getTypeActivity());
-                    activityMap.put("originalCapacity", activity.getCapacity() + activity.getUsers().size());
-                    activityMap.put("participantsCount", activity.getUsers().size());
+                    activityMap.put("originalCapacity", activity.getUserIds().size() + activity.getCapacity());
+                    activityMap.put("participantsCount", activity.getUserIds().size());
                     return activityMap;
                 })
                 .collect(Collectors.toList()));
-
         stats.put("fullCapacityActivities", fullCapacityStats);
 
         // 4. Most popular type in the last week
         LocalDate oneWeekAgo = LocalDate.now().minus(1, ChronoUnit.WEEKS);
-        Map<TypeActivity, Long> recentParticipation = allActivities.stream()
-                .filter(activity -> activity.getStartDate().isAfter(oneWeekAgo))
-                .flatMap(activity -> activity.getUsers().stream()
-                        .map(user -> new AbstractMap.SimpleEntry<>(activity.getTypeActivity(), user)))
-                .collect(Collectors.groupingBy(
-                        AbstractMap.SimpleEntry::getKey,
-                        Collectors.counting()
-                ));
+        Map<TypeActivity, Long> recentParticipation = new HashMap<>();
+        for (Activity activity : allActivities) {
+            if (activity.getStartDate().isAfter(oneWeekAgo)) {
+                recentParticipation.merge(activity.getTypeActivity(), (long) activity.getUserIds().size(), Long::sum);
+            }
+        }
 
         Optional<Map.Entry<TypeActivity, Long>> mostPopularRecent = recentParticipation.entrySet().stream()
                 .max(Map.Entry.comparingByValue());
 
         stats.put("mostPopularRecentType",
-                mostPopularRecent.isPresent() ? mostPopularRecent.get().getKey() : "No recent participation");
+                mostPopularRecent.map(Map.Entry::getKey).orElse(TypeActivity.valueOf("No recent participation")));
         stats.put("recentParticipationCounts", recentParticipation);
 
-        // 5. User participation by activity type
-        Map<TypeActivity, Set<User>> usersByActivityType = new HashMap<>();
+        // 5. User participation by activity type (count of unique users)
+        Map<TypeActivity, Set<Long>> usersByActivityType = new HashMap<>();
         for (TypeActivity type : TypeActivity.values()) {
-            Set<User> users = allActivities.stream()
+            Set<Long> userIds = allActivities.stream()
                     .filter(activity -> activity.getTypeActivity() == type)
-                    .flatMap(activity -> activity.getUsers().stream())
+                    .flatMap(activity -> activity.getUserIds().stream())
                     .collect(Collectors.toSet());
-            usersByActivityType.put(type, users);
+            usersByActivityType.put(type, userIds);
         }
+
         stats.put("uniqueUsersByType", usersByActivityType.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().size())));
 
-        // 6. Additional statistics
+        // 6. Totals
         long totalActivities = allActivities.size();
-        long totalParticipants = userRepository.findAll().stream()
-                .filter(user -> !user.getActivities().isEmpty())
-                .count();
+        long totalParticipants = allActivities.stream()
+                .mapToLong(activity -> activity.getUserIds().size())
+                .sum();
 
         stats.put("totalActivities", totalActivities);
         stats.put("totalParticipants", totalParticipants);

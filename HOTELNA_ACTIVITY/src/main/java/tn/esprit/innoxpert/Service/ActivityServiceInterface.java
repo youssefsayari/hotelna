@@ -13,6 +13,6 @@ public interface ActivityServiceInterface {
 
     public void removeActivityById(Long ActivityId);
     public Activity updateActivity (Activity b );
-    public String participateInActivity(Long userId, Long activityId, String firstName, String lastName, String email, Long telephone) ;
     public Map<String, Object> getActivityStatistics();
+    public String participateInActivity(Long userId, Long activityId);
 }

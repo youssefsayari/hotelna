@@ -59,20 +59,11 @@ public class ActivityRestController {
         return ResponseEntity.ok(updated);
     }
 
-    @PostMapping("/participate")
-    public ResponseEntity<String> participate(@RequestBody ParticipationRequest request) {
-        String result = activityService.participateInActivity(
-                request.getUserId(),
-                request.getActivityId(),
-                request.getFirstName(),
-                request.getLastName(),
-                request.getEmail(),
-                request.getTelephone()
-        );
+    @PostMapping("/participate/{idactivity}/{iduser}")
+    public ResponseEntity<String> participate(@PathVariable Long idactivity ,@PathVariable Long iduser) {
+        String result = activityService.participateInActivity(idactivity, iduser);
 
-        if ("Participation réussie !".equals(result)) {
-            return ResponseEntity.ok(result);
-        }
+            if (result != null) {return ResponseEntity.ok(result);}
         return ResponseEntity.badRequest().body(result);
     }
 
