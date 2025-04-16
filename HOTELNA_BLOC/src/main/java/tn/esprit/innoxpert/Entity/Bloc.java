@@ -22,7 +22,5 @@ public class Bloc {
     String nomBloc;
     int nombreEtages;
 
-    @OneToMany(mappedBy = "bloc", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    List<Chambre> chambres = new ArrayList<>();
 
 }

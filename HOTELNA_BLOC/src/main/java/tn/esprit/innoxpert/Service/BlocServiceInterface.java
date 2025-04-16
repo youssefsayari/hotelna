@@ -11,6 +11,5 @@ public interface BlocServiceInterface {
     Bloc addBloc(Bloc bloc);
     Bloc updateBloc(Long id, Bloc bloc);
     void deleteBloc(Long id);
-    List<Bloc> getBlocsDisponibles();
-    Map<String, Object> getTauxOccupation(Long blocId);
+
 }
