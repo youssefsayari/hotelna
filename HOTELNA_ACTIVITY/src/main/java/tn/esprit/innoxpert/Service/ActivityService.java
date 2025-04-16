@@ -145,9 +145,11 @@ public class ActivityService implements ActivityServiceInterface {
         Optional<Map.Entry<TypeActivity, Long>> mostPopularRecent = recentParticipation.entrySet().stream()
                 .max(Map.Entry.comparingByValue());
 
+           // Use string label if none found
         stats.put("mostPopularRecentType",
-                mostPopularRecent.map(Map.Entry::getKey).orElse(TypeActivity.valueOf("No recent participation")));
+                mostPopularRecent.map(entry -> entry.getKey().name()).orElse("No recent participation"));
         stats.put("recentParticipationCounts", recentParticipation);
+
 
         // 5. User participation by activity type (count of unique users)
         Map<TypeActivity, Set<Long>> usersByActivityType = new HashMap<>();

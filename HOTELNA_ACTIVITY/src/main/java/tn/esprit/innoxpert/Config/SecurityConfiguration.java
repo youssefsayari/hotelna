@@ -18,17 +18,15 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            http
-                    .csrf(csrfConfigurer -> csrfConfigurer.disable())
-                    .authorizeHttpRequests(authorize -> authorize
-                            .anyRequest().permitAll())
-                    .sessionManagement(session -> session
-                            .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrfConfigurer -> csrfConfigurer.disable())
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().permitAll())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-            return http.build();
-        }
-
-
+        return http.build();
+    }
 }

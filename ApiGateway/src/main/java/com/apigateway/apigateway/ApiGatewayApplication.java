@@ -19,6 +19,9 @@ public class ApiGatewayApplication {
     {
         return builder.routes()
                 .route("activity",r -> r.path("/activity/**").uri("lb://activity"))
+                .route("user",r -> r.path("/user/**").uri("lb://user"))
+
+
 
                 .build();
     }

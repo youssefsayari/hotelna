@@ -7,7 +7,7 @@ import tn.esprit.innoxpert.Entity.User;
 
 import java.util.List;
 
-@FeignClient(name = "user-client",url="http://localhost:8090")
+@FeignClient(name = "user")
 public interface UserClient {
 
     @GetMapping("/user/getAllUsers")
