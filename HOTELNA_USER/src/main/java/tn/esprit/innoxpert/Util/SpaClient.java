@@ -8,7 +8,7 @@ import tn.esprit.innoxpert.Entity.Spa;
 import java.util.List;
 
 @FeignClient(name = "spa-client", url = "http://localhost:5000")
-public interface SpaClient {
+public interface  SpaClient {
 
     @GetMapping("/spa/getAllSpas")
     List<Spa> getAllSpas();
