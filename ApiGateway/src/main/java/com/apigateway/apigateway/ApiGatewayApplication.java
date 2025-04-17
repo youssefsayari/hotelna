@@ -22,6 +22,9 @@ public class ApiGatewayApplication {
                 .route("spa",r -> r.path("/spa/**").uri("lb://spa"))
                 .route("complaint",r -> r.path("/complaint/**").uri("lb://complaint"))
                 .route("restaurants",r -> r.path("/restaurants/**").uri("lb://Restaurants"))
+                .route("blocs",r -> r.path("/blocs/**").uri("lb://blocs"))
+                .route("chambre",r -> r.path("/chambre/**").uri("lb://chambre"))
+                .route("activity",r -> r.path("/activity/**").uri("lb://activity"))
                 .build();
     }
 

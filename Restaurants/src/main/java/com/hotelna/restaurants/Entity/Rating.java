@@ -19,7 +19,7 @@ public class Rating {
 
     private String mail;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 

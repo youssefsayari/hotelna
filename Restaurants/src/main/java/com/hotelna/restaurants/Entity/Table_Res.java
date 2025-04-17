@@ -19,7 +19,7 @@ public class Table_Res {
     @NotNull(message = "UserId must not be null")
     private int UserId;
 
-    @ManyToOne
+    @ManyToOne (cascade = CascadeType.REMOVE)
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 
